@@ -30,6 +30,21 @@ public class GameLogic : MonoBehaviour
         AudioSource = GetComponent<AudioSource>();
         Instance = this;
         Restart();
+        EventSystem.OnDiceDestroy += OnDiceDestroy;
+    }
+
+    private void OnDiceDestroy(object sender, Dice e)
+    {
+        if (FindObjectOfType<Dice>() != null)
+            return;
+
+        foreach (DiceSpawner spawner in FindObjectsOfType<DiceSpawner>())
+            if (spawner.Remaining > 0)
+                return;
+        bool win = true;
+        foreach (DiceContainer container in FindObjectsOfType<DiceContainer>())
+            win &= container.Score == container.Target;
+        EventSystem.Finished(sender, win);
     }
 
     public void PlayScene()
