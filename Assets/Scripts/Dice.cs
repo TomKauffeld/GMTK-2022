@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,21 +16,29 @@ public class Dice : MonoBehaviour
         SIX = 6,
     }
 
-    public DiceNumber number = DiceNumber.ONE;
-    public Collider Collider;
+    private DiceNumber number = DiceNumber.ONE;
+    private Collider Collider;
 
     public Transform dice;
 
-    // Start is called before the first frame update
-    void Start()
+
+    public DiceNumber Number
     {
-        Collider = GetComponent<Collider>();
+        get
+        {
+            return number;
+        }
+        set
+        {
+            number = value;
+            UpdateCollisions();
+            UpdateRotation();
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    public void UpdateRotation()
     {
-        switch(number)
+        switch (number)
         {
             case DiceNumber.ONE:
                 dice.localRotation = Quaternion.Euler(0, 0, 0);
@@ -50,6 +59,46 @@ public class Dice : MonoBehaviour
                 dice.localRotation = Quaternion.Euler(0, 180, 0);
                 break;
         }
+    }
 
+
+    public void UpdateCollisions()
+    {
+        DiceFilter[] filters = FindObjectsOfType<DiceFilter>();
+        foreach (DiceFilter filter in filters)
+            filter.UpdateCollision(this);
+    }
+    public Collider GetCollider()
+    {
+        if (Collider == null)
+            Collider = GetComponent<Collider>();
+        return Collider;
+    }
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        EventSystem.OnReset += OnSceneReset;
+        UpdateRotation();
+        UpdateCollisions();
+        EventSystem.DiceCreated(this);
+    }
+
+    private void Update()
+    {
+        if (transform.position.y < -200)
+            Destroy(gameObject);
+    }
+
+    private void OnSceneReset(object source, EventArgs args)
+    {
+        Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        EventSystem.OnReset -= OnSceneReset;
+        EventSystem.DiceDestroyed(this);
     }
 }
