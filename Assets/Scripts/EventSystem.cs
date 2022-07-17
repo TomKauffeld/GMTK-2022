@@ -4,7 +4,7 @@ using UnityEngine;
 public class EventSystem
 {
     public static event EventHandler<Tuple<string, object>> OnEvent;
-    public static event EventHandler<Tuple<string, float>> OnMessage;
+    public static event EventHandler<float> OnVolumeChange;
 
     public static event EventHandler<Dice> OnDiceCreate;
     public static event EventHandler<Dice> OnDiceDestroy;
@@ -22,66 +22,73 @@ public class EventSystem
 
     public static void LaunchEvent(object source, string name, object variables)
     {
+        Debug.Log(name);
         OnEvent?.Invoke(source, new Tuple<string, object>(name, variables));
     }
 
     public static void DiceSpawned(DiceSpawner spawner, Dice.DiceNumber number)
     {
-        OnDiceSpawned?.Invoke(spawner, new Tuple<Dice.DiceNumber, int>(number, spawner.Remaining));
         LaunchEvent(spawner, "dice.spawned", new Tuple<Dice.DiceNumber, int>(number, spawner.Remaining));
+        OnDiceSpawned?.Invoke(spawner, new Tuple<Dice.DiceNumber, int>(number, spawner.Remaining));
     }
 
     public static void DiceCreated(Dice dice)
     {
-        OnDiceCreate?.Invoke(dice, dice);
         LaunchEvent(dice, "dice.created", dice);
+        OnDiceCreate?.Invoke(dice, dice);
     }
 
     public static void DiceDestroyed(Dice dice)
     {
-        OnDiceDestroy?.Invoke(dice, dice);
         LaunchEvent(dice, "dice.destroyed", dice);
+        OnDiceDestroy?.Invoke(dice, dice);
     }
 
     public static void SceneReset(object source)
     {
-        OnReset?.Invoke(source, new EventArgs());
         LaunchEvent(source, "scene.reset", new EventArgs());
+        OnReset?.Invoke(source, new EventArgs());
     }
 
     public static void Pause(object source)
     {
-        OnPause?.Invoke(source, true);
         LaunchEvent(source, "scene.pause", true);
+        OnPause?.Invoke(source, true);
     }
 
     public static void Start(object source)
     {
-        OnStart?.Invoke(source, false);
         LaunchEvent(source, "scene.start", false);
+        OnStart?.Invoke(source, false);
     }
 
     public static void ScoreChanged(DiceContainer container)
     {
-        OnScoreChange?.Invoke(container, container.Target - container.Score);
         LaunchEvent(container, "score.changed", container.Target - container.Score);
+        OnScoreChange?.Invoke(container, container.Target - container.Score);
     }
 
     public static void LevelChanged(LevelManager manager)
     {
-        OnLevelChange?.Invoke(manager, manager.CurrentLevel);
         LaunchEvent(manager, "scene.changed", manager.CurrentLevel);
+        OnLevelChange?.Invoke(manager, manager.CurrentLevel);
     }
 
     public static void DiceFilterChange(DiceFilter filter)
     {
-        OnDiceFilterChanged?.Invoke(filter, filter.Number);
         LaunchEvent(filter, "filter.changed", filter.Number);
+        OnDiceFilterChanged?.Invoke(filter, filter.Number);
     }
 
     public static void Finished(object source, bool win)
     {
-        OnFinished?.Invoke(source, win);
         LaunchEvent(source, "scene.finished", win);
+        OnFinished?.Invoke(source, win);
+    }
+
+    public static void VolumeChanged(object source, float volume)
+    {
+        LaunchEvent(source, "audio.volume", volume);
+        OnVolumeChange?.Invoke(source, volume);
     }
 }

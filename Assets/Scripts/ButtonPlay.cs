@@ -11,6 +11,7 @@ public class ButtonPlay : MonoBehaviour
     void Start()
     {
         EventSystem.OnPause += OnPauseChanged;
+        EventSystem.OnStart += OnPauseChanged;
         GetComponent<Button>().image.sprite = GameLogic.Paused ? Play : Pause;
     }
 
@@ -22,5 +23,6 @@ public class ButtonPlay : MonoBehaviour
     private void OnDestroy()
     {
         EventSystem.OnPause -= OnPauseChanged;
+        EventSystem.OnStart -= OnPauseChanged;
     }
 }

@@ -15,4 +15,15 @@ public class Level : MonoBehaviour
     {
         
     }
+
+    public IEnumerator OnWinState()
+    {
+        yield return new WaitForSecondsRealtime(1f);
+        yield return null;
+    }
+
+    public IEnumerator OnFailState()
+    {
+        yield return null;
+    }
 }

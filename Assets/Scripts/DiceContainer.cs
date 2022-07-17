@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-public class DiceContainer : MonoBehaviour
+public class DiceContainer : HasAudio
 {
     public TextMeshPro text;
     public int Target = 0;
@@ -11,8 +11,9 @@ public class DiceContainer : MonoBehaviour
     public Color Pending = Color.black;
 
     // Start is called before the first frame update
-    void Start()
+    override protected void Start()
     {
+        base.Start();
         EventSystem.OnReset += OnReset;
     }
 
@@ -39,6 +40,7 @@ public class DiceContainer : MonoBehaviour
             Score += (byte)dice.Number;
             Destroy(other.gameObject);
             EventSystem.ScoreChanged(this);
+            Play();
         }
     }
 }

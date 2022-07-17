@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,7 +14,50 @@ public class LevelManager : MonoBehaviour
 
     void Start()
     {
+        EventSystem.OnDiceDestroy += OnDiceDestroy;
+        EventSystem.OnFinished += OnFinished;
         SetLevel(0);
+    }
+
+    private void OnFinished(object sender, bool win)
+    {
+        StartCoroutine(Finished(win));
+    }
+
+    private IEnumerator Finished(bool win)
+    {
+        if (win)
+            yield return CurrentLevel.OnWinState();
+        else
+            yield return CurrentLevel.OnFailState();
+        if (win && CurrentLevelIndex < Levels.Count)
+            SetLevel(CurrentLevelIndex + 1);
+        else if (win)
+            SetLevel(0);
+        yield return null;
+    }
+
+    private void OnDiceDestroy(object sender, Dice e)
+    {
+        if (FindObjectOfType<Dice>() != null)
+            return;
+
+        foreach (DiceSpawner spawner in FindObjectsOfType<DiceSpawner>())
+            if (spawner.Remaining > 0)
+                return;
+
+        bool win = true;
+
+        foreach (DiceContainer container in FindObjectsOfType<DiceContainer>())
+            win &= container.Score == container.Target;
+
+        if (!win)
+        {
+            GameLogic.Instance.PauseScene();
+            GameLogic.Instance.NextReset = true;
+        }
+
+        EventSystem.Finished(sender, win);
     }
 
     public void SetLevel(int level)

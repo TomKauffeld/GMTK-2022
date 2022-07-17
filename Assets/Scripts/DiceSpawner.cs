@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
-public class DiceSpawner : MonoBehaviour
+public class DiceSpawner : HasAudio
 {
-    public TextMeshPro Display;
+    public DicePreview Preview;
 
     public Dice Dice;
     public ushort Amount_1 = 0;
@@ -15,25 +14,16 @@ public class DiceSpawner : MonoBehaviour
     public ushort Amount_5 = 0;
     public ushort Amount_6 = 0;
 
-    public int Remaining
-    {
-        get
-        {
-            int sum = 0;
-            foreach (KeyValuePair<Dice.DiceNumber, ushort> kv in spawnAmount)
-                sum += kv.Value;
-            return sum;
-        }
-    }
+    public int Remaining => spawnNumbers.Count;
 
     public List<Collider> Colliders = new();
 
-    private readonly Dictionary<Dice.DiceNumber, ushort> spawnAmount = new();
+    private readonly Queue<DicePreview> spawnNumbers = new();
 
-    private readonly string format = "Dice 1: {0}\nDice 2: {1}\nDice 3: {2}\nDice 4: {3}\nDice 5: {4}\nDice 6: {5}";
 
-    void Start()
+    override protected void Start()
     {
+        base.Start();
         Spawn();
         EventSystem.OnReset += OnSceneReset;
     }
@@ -47,6 +37,7 @@ public class DiceSpawner : MonoBehaviour
             if (number.HasValue)
             {
                 SetDisplay();
+                Play();
                 EventSystem.DiceSpawned(this, number.Value);
             }
         }
@@ -74,30 +65,60 @@ public class DiceSpawner : MonoBehaviour
 
     private Dice.DiceNumber? SpawnFirst()
     {
-        foreach(KeyValuePair<Dice.DiceNumber, ushort> v in spawnAmount)
+        Dice.DiceNumber? number = GetNext();
+        if (number.HasValue)
         {
-            if (v.Value > 0)
-            {
-                Dice dice = Instantiate(Dice);
-                dice.Number = v.Key;
-                dice.transform.parent = transform;
-                dice.transform.localPosition = Vector3.zero;
-                spawnAmount[v.Key]--;
-                OnTriggerEnter(dice.GetCollider());
-                return v.Key;
-            }
+            Dice dice = Instantiate(Dice);
+            dice.Number = number.Value;
+            dice.transform.parent = transform;
+            dice.transform.localPosition = Vector3.zero;
+
+            OnTriggerEnter(dice.GetCollider());
+        }
+        return number;
+    }
+
+    private Dice.DiceNumber? GetNext()
+    {
+        if (spawnNumbers.TryDequeue(out DicePreview preview))
+        {
+            Destroy(preview.gameObject);
+            return preview.Number;
         }
         return null;
     }
 
+    private void AddDicePreview(Dice.DiceNumber number)
+    {
+        DicePreview preview = Instantiate(Preview);
+        preview.transform.parent = transform;
+        preview.transform.localPosition = Vector3.zero;
+        preview.Number = number;
+        spawnNumbers.Enqueue(preview);
+    }
+
+    private void ClearDicePreview()
+    {
+        while (spawnNumbers.TryDequeue(out DicePreview preview))
+            Destroy(preview.gameObject);
+    }
+
     public void Spawn()
     {
-        spawnAmount[Dice.DiceNumber.ONE] = Amount_1;
-        spawnAmount[Dice.DiceNumber.TWO] = Amount_2;
-        spawnAmount[Dice.DiceNumber.THREE] = Amount_3;
-        spawnAmount[Dice.DiceNumber.FOUR] = Amount_4;
-        spawnAmount[Dice.DiceNumber.FIVE] = Amount_5;
-        spawnAmount[Dice.DiceNumber.SIX] = Amount_6;
+        ClearDicePreview();
+        for (ushort i = 0; i < Amount_1; ++i)
+            AddDicePreview(Dice.DiceNumber.ONE);
+        for (ushort i = 0; i < Amount_2; ++i)
+            AddDicePreview(Dice.DiceNumber.TWO);
+        for (ushort i = 0; i < Amount_3; ++i)
+            AddDicePreview(Dice.DiceNumber.THREE);
+        for (ushort i = 0; i < Amount_4; ++i)
+            AddDicePreview(Dice.DiceNumber.FOUR);
+        for (ushort i = 0; i < Amount_5; ++i)
+            AddDicePreview(Dice.DiceNumber.FIVE);
+        for (ushort i = 0; i < Amount_6; ++i)
+            AddDicePreview(Dice.DiceNumber.SIX);
+
         SetDisplay();
     }
 
@@ -114,20 +135,21 @@ public class DiceSpawner : MonoBehaviour
 
     private void SetDisplay()
     {
-        if (!Display)
-            return;
-        Display.text = string.Format(format,
-            spawnAmount[Dice.DiceNumber.ONE],
-            spawnAmount[Dice.DiceNumber.TWO],
-            spawnAmount[Dice.DiceNumber.THREE],
-            spawnAmount[Dice.DiceNumber.FOUR],
-            spawnAmount[Dice.DiceNumber.FIVE],
-            spawnAmount[Dice.DiceNumber.SIX]
-        );
+        DicePreview[] previews = spawnNumbers.ToArray();
+
+        float y = 0;
+        for (int i = 0; i < previews.Length; ++i)
+        {
+            Vector3 pos = previews[i].transform.localPosition;
+            y += previews[i].transform.localScale.y;
+            pos.y = y;
+            previews[i].transform.localPosition = pos;
+        }
     }
 
-    private void OnDestroy()
+    override protected void OnDestroy()
     {
+        base.OnDestroy();
         EventSystem.OnReset -= OnSceneReset;
     }
 }

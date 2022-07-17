@@ -3,64 +3,77 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
-public class GameLogic : MonoBehaviour
+public class GameLogic : HasAudio
 {
     public static bool Active { get => Instance != null && !Instance.SettingsPanel.activeInHierarchy; }
     public static bool Paused { get => Instance == null || Instance.Pause; }
 
     public static GameLogic Instance = null;
-   
+
+    public static float Volume
+    {
+        get
+        {
+            return Instance ? Instance.Save.Volume : 1;
+        }
+        set
+        {
+            if (!Instance)
+                return;
+            Instance.Save.Volume = value;
+            Instance.Save.SaveDisk();
+            EventSystem.VolumeChanged(Instance, value);
+        }
+    }
 
 
     public bool Pause = true;
     public Save Save;
 
+    public bool NextReset = false;
+
     public Settings Settings;
     public AudioClip ClickClip = null;
+    public AudioClip LostClip = null;
+    public AudioClip WinClip = null;
     public GameObject SettingsPanel;
-    private AudioSource AudioSource;
     public LevelManager LevelManager;
 
 
     // Start is called before the first frame update
-    void Start()
-    {
+    override protected void Start()
+    {         
         Save = Save.Load();
-        AudioSource = GetComponent<AudioSource>();
         Instance = this;
+        base.Start();
         Restart();
-        EventSystem.OnDiceDestroy += OnDiceDestroy;
+        EventSystem.OnFinished += OnFinished;
     }
 
-    private void OnDiceDestroy(object sender, Dice e)
+    private void OnFinished(object sender, bool e)
     {
-        if (FindObjectOfType<Dice>() != null)
-            return;
-
-        foreach (DiceSpawner spawner in FindObjectsOfType<DiceSpawner>())
-            if (spawner.Remaining > 0)
-                return;
-        bool win = true;
-        foreach (DiceContainer container in FindObjectsOfType<DiceContainer>())
-            win &= container.Score == container.Target;
-        EventSystem.Finished(sender, win);
+        if (e)
+            PlayOneShot(WinClip);
+        else
+            PlayOneShot(LostClip);
     }
 
     public void PlayScene()
     {
         if (SettingsPanel.activeInHierarchy)
             return;
+        if (NextReset)
+            Restart();
+        EventSystem.Start(this);
         Pause = false;
         Time.timeScale = 1;
-        EventSystem.Start(this);
     }
 
     public void PauseScene()
     {
+        EventSystem.Pause(this);
         Pause = true;
         Time.timeScale = 0;
-        EventSystem.Pause(this);
     }
 
     public void PlayPause()
@@ -92,7 +105,7 @@ public class GameLogic : MonoBehaviour
     public void SoundClick(bool force = false)
     {
         if (ClickClip != null && (force || !SettingsPanel.activeInHierarchy))
-            AudioSource.PlayOneShot(ClickClip);
+            PlayOneShot(ClickClip);
     }
 
 
@@ -106,6 +119,7 @@ public class GameLogic : MonoBehaviour
     {
         if (SettingsPanel.activeInHierarchy)
             return;
+        NextReset = false;
         PauseScene();
         EventSystem.SceneReset(this);
     }

@@ -22,7 +22,18 @@ public class Player : MonoBehaviour
 
     private void LevelChanged(object sender, Level e)
     {
-        transform.position = new Vector3(0, 0, -20);
+        if (e)
+        {
+            BoxCollider collider = e.GetComponent<BoxCollider>();
+
+            transform.position = new Vector3(
+                e.transform.position.x + collider.center.x,
+                e.transform.position.y + collider.center.y,
+                -e.transform.lossyScale.x * collider.size.x
+            );
+        }
+        else
+            transform.position = new Vector3(0, 0, -20);
     }
 
     // Update is called once per frame

@@ -6,6 +6,7 @@ public class HudManager : MonoBehaviour
     public GameObject MainMenu;
     public SettingsMenu Settings;
     public GameObject CreditsMenu;
+    public GameObject HelpMenu;
 
     public LevelManager LevelManager;
 
@@ -14,6 +15,7 @@ public class HudManager : MonoBehaviour
         MAIN,
         SETTINGS,
         CREDITS,
+        HELP,
     }
 
     private MenuState State = MenuState.MAIN;
@@ -52,6 +54,7 @@ public class HudManager : MonoBehaviour
     {
         MainMenu.SetActive(LevelManager.CurrentLevel == null && State == MenuState.MAIN);
         CreditsMenu.SetActive(LevelManager.CurrentLevel == null && State == MenuState.CREDITS);
+        HelpMenu.SetActive(LevelManager.CurrentLevel == null && State == MenuState.HELP);
         Settings.gameObject.SetActive(LevelManager.CurrentLevel == null && State == MenuState.SETTINGS);
     }
 
@@ -64,6 +67,12 @@ public class HudManager : MonoBehaviour
     public void OpenCredits()
     {
         State = MenuState.CREDITS;
+        UpdateMenus();
+    }
+
+    public void OpenHelp()
+    {
+        State = MenuState.HELP;
         UpdateMenus();
     }
 
